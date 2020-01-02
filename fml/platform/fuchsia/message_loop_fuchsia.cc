@@ -35,4 +35,15 @@ void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
   FML_DCHECK(status == ZX_OK);
 }
 
+// TODO(gw280): This is needed in order to get the underlying async::Loop object to pass to other Fuchsia components,
+// such as the Trace component.
+async::Loop* MessageLoopFuchsia::FuchsiaLoopForMessageLoop(MessageLoop& message_loop) {
+  MessageLoopFuchsia* loop_impl = (MessageLoopFuchsia*)MessageLoopImpl::GetLoopImpl(message_loop).get();
+  return loop_impl->GetAsyncLoop();
+}
+
+async::Loop* MessageLoopFuchsia::GetAsyncLoop() {
+  return &loop_;
+}
+
 }  // namespace fml

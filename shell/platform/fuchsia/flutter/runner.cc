@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "runner.h"
 
 #include <fuchsia/mem/cpp/fidl.h>
@@ -16,6 +18,7 @@
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/platform/fuchsia/message_loop_fuchsia.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/runtime/dart_vm.h"
 #include "lib/sys/cpp/component_context.h"
@@ -128,11 +131,6 @@ static void SetProcessName() {
   zx::process::self()->set_property(ZX_PROP_NAME, name.c_str(), name.size());
 }
 
-static void SetThreadName(const std::string& thread_name) {
-  zx::thread::self()->set_property(ZX_PROP_NAME, thread_name.c_str(),
-                                   thread_name.size());
-}
-
 #if !defined(DART_PRODUCT)
 // Register native symbol information for the Dart VM's profiler.
 static void RegisterProfilerSymbols(const char* symbols_path,
@@ -146,8 +144,8 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
-Runner::Runner(async::Loop* loop)
-    : loop_(loop), context_(sys::ComponentContext::Create()) {
+Runner::Runner(fml::MessageLoop& message_loop)
+    : message_loop_(message_loop), context_(sys::ComponentContext::Create()) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
@@ -165,7 +163,7 @@ Runner::Runner(async::Loop* loop)
 
   SetProcessName();
 
-  SetThreadName("io.flutter.runner.main");
+  fml::Thread::SetCurrentThreadName("io.flutter.runner.main");
 
   context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
       std::bind(&Runner::RegisterApplication, this, std::placeholders::_1));
@@ -214,10 +212,10 @@ void Runner::StartComponent(
   // there being multiple application runner instance in the process at the same
   // time. So it is safe to use the raw pointer.
   Application::TerminationCallback termination_callback =
-      [task_runner = loop_->dispatcher(),  //
+      [task_runner = message_loop_.GetTaskRunner(),  //
        application_runner = this           //
   ](const Application* application) {
-        async::PostTask(task_runner, [application_runner, application]() {
+        fml::TaskRunner::RunNowOrPostTask(task_runner, [application_runner, application]() {
           application_runner->OnApplicationTerminate(application);
         });
       };
@@ -254,12 +252,11 @@ void Runner::OnApplicationTerminate(const Application* application) {
   active_applications_.erase(application);
 
   // Post the task to destroy the application and quit its message loop.
-  async::PostTask(
-      application_thread->dispatcher(),
+  fml::TaskRunner::RunNowOrPostTask(
+      application_thread->GetTaskRunner(),
       fml::MakeCopyable([instance = std::move(application_to_destroy),
                          thread = application_thread.get()]() mutable {
         instance.reset();
-        thread->Quit();
       }));
 
   // This works because just posted the quit task on the hosted thread.
@@ -287,7 +284,8 @@ bool Runner::SetupTZDataInternal() {
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
-  trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
+  auto loop = fml::MessageLoopFuchsia::FuchsiaLoopForMessageLoop(message_loop_);
+  trace_observer_->Start(loop->dispatcher(), [runner = this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }
@@ -297,7 +295,7 @@ void Runner::SetupTraceObserver() {
     } else if (trace_state() == TRACE_STOPPING) {
       for (auto& it : runner->active_applications_) {
         fml::AutoResetWaitableEvent latch;
-        async::PostTask(it.second.thread->dispatcher(), [&]() {
+        fml::TaskRunner::RunNowOrPostTask(it.second.thread->GetTaskRunner(), [&]() {
           it.second.application->WriteProfileToTrace();
           latch.Signal();
         });
