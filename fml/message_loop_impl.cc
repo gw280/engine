@@ -145,8 +145,4 @@ TaskQueueId MessageLoopImpl::GetTaskQueueId() const {
   return queue_id_;
 }
 
-fml::RefPtr<MessageLoopImpl> MessageLoopImpl::GetLoopImpl(MessageLoop& message_loop) {
-  return message_loop.GetLoopImpl();
-}
-
 }  // namespace fml

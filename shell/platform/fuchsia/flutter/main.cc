@@ -5,12 +5,11 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/async-loop/default.h>
 #include <lib/trace-provider/provider.h>
 #include <lib/trace/event.h>
 
 #include <cstdlib>
-
-#include "flutter/fml/platform/fuchsia/message_loop_fuchsia.h"
 
 #include "runner.h"
 #include "runtime/dart/utils/tempfs.h"
@@ -23,9 +22,10 @@ int main(int argc, char const* argv[]) {
   {
     TRACE_DURATION("flutter", "CreateTraceProvider");
     bool already_started;
+    async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
     // Use CreateSynchronously to prevent loss of early events.
     trace::TraceProviderWithFdio::CreateSynchronously(
-        fml::MessageLoopFuchsia::FuchsiaLoopForMessageLoop(message_loop)->dispatcher(), "flutter_runner", &provider, &already_started);
+        loop.dispatcher(), "flutter_runner", &provider, &already_started);
   }
 
   // Set up the process-wide /tmp memfs.

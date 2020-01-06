@@ -13,9 +13,6 @@
 namespace fml {
 
 class MessageLoopFuchsia : public MessageLoopImpl {
- public:
-  static async::Loop* FuchsiaLoopForMessageLoop(MessageLoop& message_loop);
-
  private:
   MessageLoopFuchsia();
 
@@ -26,8 +23,6 @@ class MessageLoopFuchsia : public MessageLoopImpl {
   void Terminate() override;
 
   void WakeUp(fml::TimePoint time_point) override;
-
-  async::Loop* GetAsyncLoop();
 
   async::Loop loop_;
 

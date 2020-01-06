@@ -18,7 +18,6 @@
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/platform/fuchsia/message_loop_fuchsia.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/runtime/dart_vm.h"
 #include "lib/sys/cpp/component_context.h"
@@ -284,8 +283,9 @@ bool Runner::SetupTZDataInternal() {
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
-  auto loop = fml::MessageLoopFuchsia::FuchsiaLoopForMessageLoop(message_loop_);
-  trace_observer_->Start(loop->dispatcher(), [runner = this]() {
+  ASSERT_TRUE(message_loop_.GetTaskRunner()->RunsTasksOnCurrentThread());
+  async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
+  trace_observer_->Start(loop.dispatcher(), [runner = this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }

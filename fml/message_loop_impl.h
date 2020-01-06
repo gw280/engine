@@ -58,8 +58,6 @@ class MessageLoopImpl : public Wakeable,
  protected:
   MessageLoopImpl();
 
-  static fml::RefPtr<MessageLoopImpl> GetLoopImpl(MessageLoop& loop);
-
  private:
   fml::RefPtr<MessageLoopTaskQueues> task_queue_;
   TaskQueueId queue_id_;

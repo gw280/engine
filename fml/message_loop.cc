@@ -80,4 +80,5 @@ TaskQueueId MessageLoop::GetCurrentTaskQueueId() {
          "this thread prior to message loop use.";
   return loop->GetLoopImpl()->GetTaskQueueId();
 }
+
 }  // namespace fml
