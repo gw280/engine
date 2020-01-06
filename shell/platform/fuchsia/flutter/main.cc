@@ -22,10 +22,9 @@ int main(int argc, char const* argv[]) {
   {
     TRACE_DURATION("flutter", "CreateTraceProvider");
     bool already_started;
-    async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
     // Use CreateSynchronously to prevent loss of early events.
     trace::TraceProviderWithFdio::CreateSynchronously(
-        loop.dispatcher(), "flutter_runner", &provider, &already_started);
+        async_get_default_dispatcher(), "flutter_runner", &provider, &already_started);
   }
 
   // Set up the process-wide /tmp memfs.

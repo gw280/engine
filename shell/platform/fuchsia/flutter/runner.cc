@@ -284,8 +284,7 @@ bool Runner::SetupTZDataInternal() {
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
   ASSERT_TRUE(message_loop_.GetTaskRunner()->RunsTasksOnCurrentThread());
-  async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
-  trace_observer_->Start(loop.dispatcher(), [runner = this]() {
+  trace_observer_->Start(async_get_default_dispatcher()), [runner = this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }
