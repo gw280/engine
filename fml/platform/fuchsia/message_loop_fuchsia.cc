@@ -11,15 +11,23 @@
 namespace fml {
 
 MessageLoopFuchsia::MessageLoopFuchsia()
-    : loop_(&kAsyncLoopConfigAttachToCurrentThread) {}
+    : loop_(&kAsyncLoopConfigAttachToCurrentThread), running_(false) {}
 
 MessageLoopFuchsia::~MessageLoopFuchsia() = default;
 
 void MessageLoopFuchsia::Run() {
-  loop_.Run();
+  running_ = true;
+  while (running_) {
+    auto status = loop_.Run();
+    if (status == ZX_ERR_TIMED_OUT || status == ZX_ERR_CANCELED || status == ZX_ERR_BAD_STATE) {
+      RunExpiredTasksNow();
+      running_ = false;
+    }
+  }
 }
 
 void MessageLoopFuchsia::Terminate() {
+  running_ = false;
   loop_.Quit();
 }
 

@@ -25,6 +25,7 @@ class MessageLoopFuchsia : public MessageLoopImpl {
   void WakeUp(fml::TimePoint time_point) override;
 
   async::Loop loop_;
+  bool running_;
 
   FML_FRIEND_MAKE_REF_COUNTED(MessageLoopFuchsia);
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopFuchsia);
