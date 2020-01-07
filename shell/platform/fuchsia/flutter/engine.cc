@@ -18,7 +18,6 @@
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "runtime/dart/utils/files.h"
-#include "task_runner_adapter.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
 namespace flutter_runner {

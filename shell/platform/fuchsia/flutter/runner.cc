@@ -283,8 +283,8 @@ bool Runner::SetupTZDataInternal() {
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
-  ASSERT_TRUE(message_loop_.GetTaskRunner()->RunsTasksOnCurrentThread());
-  trace_observer_->Start(async_get_default_dispatcher()), [runner = this]() {
+  FML_DCHECK(message_loop_.GetTaskRunner()->RunsTasksOnCurrentThread());
+  trace_observer_->Start(async_get_default_dispatcher(), [runner = this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }

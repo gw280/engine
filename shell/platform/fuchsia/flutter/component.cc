@@ -38,7 +38,6 @@
 #include "runtime/dart/utils/vmo.h"
 
 #include "task_observers.h"
-#include "task_runner_adapter.h"
 
 // TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
 // Can read from target object.
