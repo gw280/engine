@@ -5,6 +5,8 @@
 import("//build/fuchsia/sdk.gni")
 
 group("platform") {
+  testonly = true
+  
   if (is_mac || is_ios) {
     deps = [
       "darwin",

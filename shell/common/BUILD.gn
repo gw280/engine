@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/testing/testing.gni")
 
@@ -143,56 +144,67 @@ template("shell_host_executable") {
   }
 }
 
-if (current_toolchain == host_toolchain) {
-  shell_gpu_configuration("shell_unittests_gpu_configuration") {
-    enable_software = true
+shell_gpu_configuration("shell_unittests_gpu_configuration") {
+  enable_software = true
+  enable_metal = false
+
+  if (is_fuchsia) {
+    enable_vulkan = true
+    enable_gl = false
+  } else {
     enable_vulkan = false
     enable_gl = true
-    enable_metal = false
   }
+}
 
-  test_fixtures("shell_unittests_fixtures") {
-    dart_main = "fixtures/shell_test.dart"
+test_fixtures("shell_unittests_fixtures") {
+  dart_main = "fixtures/shell_test.dart"
 
-    fixtures = [ "fixtures/shelltest_screenshot.png" ]
-  }
+  fixtures = [ "fixtures/shelltest_screenshot.png" ]
+}
 
-  shell_host_executable("shell_unittests") {
-    sources = [
-      "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
-      "input_events_unittests.cc",
-      "persistent_cache_unittests.cc",
-      "pipeline_unittests.cc",
-      "shell_test.cc",
-      "shell_test.h",
-      "shell_unittests.cc",
-      "vsync_waiters_test.cc",
-      "vsync_waiters_test.h",
-    ]
+shell_host_executable("shell_unittests") {
+  testonly = true
 
-    deps = [
-      ":shell_unittests_fixtures",
-      ":shell_unittests_gpu_configuration",
-      "$flutter_root/common",
-      "$flutter_root/flow",
-      "$flutter_root/fml/dart",
-      "$flutter_root/lib/ui:ui",
-      "$flutter_root/shell",
-      "$flutter_root/testing:dart",
+  sources = [
+    "animator_unittests.cc",
+    "canvas_spy_unittests.cc",
+    "input_events_unittests.cc",
+    "persistent_cache_unittests.cc",
+    "pipeline_unittests.cc",
+    "shell_test.cc",
+    "shell_test.h",
+    "shell_unittests.cc",
+    "vsync_waiters_test.cc",
+    "vsync_waiters_test.h",
+  ]
+
+  deps = [
+    ":shell_unittests_fixtures",
+    ":shell_unittests_gpu_configuration",
+    "$flutter_root/common",
+    "$flutter_root/flow",
+    "$flutter_root/fml/dart",
+    "$flutter_root/lib/ui:ui",
+    "$flutter_root/shell",
+    "$flutter_root/testing:dart",
+  ]
+
+  if (!is_fuchsia) {
+    deps += [
       "$flutter_root/testing:opengl",
     ]
   }
+}
 
-  shell_host_executable("shell_benchmarks") {
-    sources = [
-      "shell_benchmarks.cc",
-    ]
+shell_host_executable("shell_benchmarks") {
+  sources = [
+    "shell_benchmarks.cc",
+  ]
 
-    deps = [
-      ":shell_unittests_fixtures",
-      "$flutter_root/benchmarking",
-      "$flutter_root/testing:testing_lib",
-    ]
-  }
+  deps = [
+    ":shell_unittests_fixtures",
+    "$flutter_root/benchmarking",
+    "$flutter_root/testing:testing_lib",
+  ]
 }
