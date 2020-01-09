@@ -5,19 +5,23 @@
 #ifndef FLUTTER_SHELL_COMMON_SHELL_TEST_PLATFORM_VIEW_GL_H_
 #define FLUTTER_SHELL_COMMON_SHELL_TEST_PLATFORM_VIEW_GL_H_
 
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/testing/test_gl_surface.h"
 
-class ShellTestPlatformViewGL : public PlatformView, public GPUSurfaceGLDelegate {
+namespace flutter {
+namespace testing {
+
+class ShellTestPlatformViewGL : public ShellTestPlatformView, public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformViewGL(PlatformView::Delegate& delegate,
                         TaskRunners task_runners,
                         std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                         CreateVsyncWaiter create_vsync_waiter);
 
-  ~ShellTestPlatformViewGL() override;
+  virtual ~ShellTestPlatformViewGL() override;
 
-  void SimulateVSync();
+  virtual void SimulateVSync() override;
 
  private:
   TestGLSurface gl_surface_;
@@ -55,5 +59,8 @@ class ShellTestPlatformViewGL : public PlatformView, public GPUSurfaceGLDelegate
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewGL);
 };
+
+}  // namespace testing
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_SHELL_TEST_PLATFORM_VIEW_GL_H_

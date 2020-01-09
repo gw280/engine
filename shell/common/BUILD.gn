@@ -174,6 +174,8 @@ shell_host_executable("shell_unittests") {
     "pipeline_unittests.cc",
     "shell_test.cc",
     "shell_test.h",
+    "shell_test_platform_view.cc",
+    "shell_test_platform_view.h",
     "shell_unittests.cc",
     "vsync_waiters_test.cc",
     "vsync_waiters_test.h",
@@ -191,8 +193,18 @@ shell_host_executable("shell_unittests") {
   ]
 
   if (!is_fuchsia) {
+    sources += [
+      "shell_test_platform_view_gl.cc",
+      "shell_test_platform_view_gl.h",
+    ]
+
     deps += [
       "$flutter_root/testing:opengl",
+    ]
+  } else {
+    sources += [
+      "shell_test_platform_view_vulkan.cc",
+      "shell_test_platform_view_vulkan.h",
     ]
   }
 }

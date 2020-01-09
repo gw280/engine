@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -13,10 +14,6 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
-
-#ifndef OS_FUCHSIA
-#include "flutter/shell/gpu/gpu_surface_gl.h" // nogncheck
-#endif
 
 namespace flutter {
 namespace testing {
@@ -275,7 +272,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
   return Shell::Create(
       task_runners, settings,
       [vsync_clock, &create_vsync_waiter](Shell& shell) {
-        return std::make_unique<ShellTestPlatformView>(
+        return ShellTestPlatformView::Create(
             shell, shell.GetTaskRunners(), vsync_clock,
             std::move(create_vsync_waiter));
       },

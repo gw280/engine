@@ -3,13 +3,17 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
+
+namespace flutter {
+namespace testing {
 
 ShellTestPlatformViewGL::ShellTestPlatformViewGL(
     PlatformView::Delegate& delegate,
     TaskRunners task_runners,
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter)
-    : PlatformView(delegate, std::move(task_runners)),
+    : ShellTestPlatformView(delegate, std::move(task_runners)),
       gl_surface_(SkISize::Make(800, 600)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(vsync_clock) {}
@@ -68,3 +72,6 @@ GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformViewGL::GetGLProcResolver(
 ExternalViewEmbedder* ShellTestPlatformViewGL::GetExternalViewEmbedder() {
   return nullptr;
 }
+
+}  // namespace testing
+}  // namespace flutter
