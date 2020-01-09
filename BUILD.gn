@@ -135,6 +135,7 @@ if (is_fuchsia) {
     deps = [
       "$flutter_root/flow:flow_tests",
       "$flutter_root/fml:fml_tests",
+      "$flutter_root/shell/common:shell_tests",
       "$flutter_root/shell/platform/fuchsia/flutter:flutter_runner_tests",
     ]
   }

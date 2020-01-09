@@ -6,6 +6,11 @@ import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/testing/testing.gni")
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+  import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
+}
+
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
 #   String output (name of output file)
@@ -209,6 +214,24 @@ shell_host_executable("shell_unittests") {
   }
 }
 
+if (is_fuchsia) {
+  fuchsia_test_archive("shell_tests") {
+    deps = [
+      ":shell_unittests",
+      ":dart_snapshot_kernel_dart_snapshot_shell_unittests_fixtures",
+    ]
+
+    binary = "shell_unittests"
+
+    resources = [
+      {
+        path = "$root_out_dir/gen/flutter/shell/common/assets/kernel_blob.bin"
+        dest = "kernel_blob.bin"
+      },
+    ]
+  }
+}
+
 shell_host_executable("shell_benchmarks") {
   sources = [
     "shell_benchmarks.cc",
@@ -219,4 +242,6 @@ shell_host_executable("shell_benchmarks") {
     "$flutter_root/benchmarking",
     "$flutter_root/testing:testing_lib",
   ]
+
+
 }
