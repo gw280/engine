@@ -27,6 +27,10 @@ static int ToPosixProtectionFlags(
         break;
       case FileMapping::Protection::kWrite:
         flags |= PROT_WRITE;
+#if OS_FUCHSIA
+        // TODO(gw280): Figure out why Fuchsia needs PROT_READ
+        flags |= PROT_READ;
+#endif
         break;
       case FileMapping::Protection::kExecute:
         flags |= PROT_READ | PROT_EXEC;

@@ -82,6 +82,7 @@ TEST(FileTest, CanTruncateAndWrite) {
     ASSERT_TRUE(fml::TruncateFile(fd, contents.size()));
 
     fml::FileMapping mapping(fd, {fml::FileMapping::Protection::kWrite});
+    ASSERT_TRUE(mapping.IsValid());
     ASSERT_EQ(mapping.GetSize(), contents.size());
     ASSERT_NE(mapping.GetMutableMapping(), nullptr);
 
