@@ -214,9 +214,13 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 
   ::memcpy(mapping.GetMutableMapping(), data.GetMapping(), data.GetSize());
 
+  // Some platforms (e.g. Fuchsia) do not support msync. These macros will both be defined
+  // to a value > 0 in unistd.h if the platform supports msync.
+#if _POSIX_MAPPED_FILED && _POSIX_SYNCHRONIZED_IO
   if (::msync(mapping.GetMutableMapping(), data.GetSize(), MS_SYNC) != 0) {
     return false;
   }
+#endif
 
   return ::renameat(base_directory.get(), temp_file_name.c_str(),
                     base_directory.get(), file_name) == 0;
