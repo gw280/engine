@@ -226,7 +226,7 @@ if (is_fuchsia) {
     resources = [
       {
         path = "$root_out_dir/gen/flutter/shell/common/assets/kernel_blob.bin"
-        dest = "kernel_blob.bin"
+        dest = "assets/kernel_blob.bin"
       },
     ]
   }
