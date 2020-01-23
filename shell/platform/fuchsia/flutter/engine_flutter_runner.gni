@@ -83,6 +83,7 @@ template("flutter_runner") {
       "$flutter_root/vulkan",
       "$flutter_root/fml",
       "$flutter_root/shell/common",
+      "$flutter_root/shell/platform/embedder:embedder",
     ]
 
     # TODO(kaushikiska) evaluate if all of these are needed.
