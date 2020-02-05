@@ -210,31 +210,34 @@ shell_host_executable("shell_unittests") {
     defines = []
   }
 
-  if (shell_enable_gl) {
-    sources += [
-      "shell_test_platform_view_gl.cc",
-      "shell_test_platform_view_gl.h",
-    ]
+  # SwiftShader only supports x86/x64_64
+  if (target_cpu == "x86" || target_cpu == "x64") {
+    if (shell_enable_gl) {
+      sources += [
+        "shell_test_platform_view_gl.cc",
+        "shell_test_platform_view_gl.h",
+      ]
 
-    deps += [
-      "//flutter/testing:opengl",
-    ]
+      deps += [
+        "//flutter/testing:opengl",
+      ]
 
-    defines += [ "SHELL_ENABLE_GL" ]
-  }
+      defines += [ "SHELL_ENABLE_GL" ]
+    }
 
-  if (shell_enable_vulkan) {
-    sources += [
-      "shell_test_platform_view_vulkan.cc",
-      "shell_test_platform_view_vulkan.h",
-    ]
+    if (shell_enable_vulkan) {
+      sources += [
+        "shell_test_platform_view_vulkan.cc",
+        "shell_test_platform_view_vulkan.h",
+      ]
 
-    deps += [
-      "//flutter/testing:vulkan",
-      "//flutter/vulkan",
-    ]
+      deps += [
+        "//flutter/testing:vulkan",
+        "//flutter/vulkan",
+      ]
 
-    defines += [ "SHELL_ENABLE_VULKAN" ]
+      defines += [ "SHELL_ENABLE_VULKAN" ]
+    }
   }
 }
 
