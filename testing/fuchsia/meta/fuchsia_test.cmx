@@ -5,7 +5,10 @@
   "sandbox": {
     "features": [
       "vulkan",
-      "deprecated-ambient-replace-as-executable"
+      "deprecated-ambient-replace-as-executable",
+      "isolated-temp",
+      "isolated-persistent-storage",
+      "isolated-cache-storage"
     ],
     "services": [
       "fuchsia.accessibility.semantics.SemanticsManager",

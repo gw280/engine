@@ -106,6 +106,7 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   TRACE_EVENT0("flutter", "PersistentCache::LoadSkSLs");
   std::vector<PersistentCache::SkSLCache> result;
   if (!IsValid()) {
+    FML_LOG(INFO) << "PersistentCache is not valid";
     return result;
   }
   fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
@@ -149,12 +150,14 @@ bool PersistentCache::IsValid() const {
 
 sk_sp<SkData> PersistentCache::LoadFile(const fml::UniqueFD& dir,
                                         const std::string& file_name) {
+                                        FML_LOG(INFO) << "Opening " << file_name;
   auto file = fml::OpenFileReadOnly(dir, file_name.c_str());
   if (!file.is_valid()) {
     return nullptr;
   }
   auto mapping = std::make_unique<fml::FileMapping>(file);
   if (mapping->GetSize() == 0) {
+    FML_LOG(WARNING) << "Empty mapping";
     return nullptr;
   }
   return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
@@ -211,6 +214,7 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
 
 // |GrContextOptions::PersistentCache|
 void PersistentCache::store(const SkData& key, const SkData& data) {
+  FML_LOG(INFO) << "STORE";
   stored_new_shaders_ = true;
 
   if (is_read_only_) {

@@ -3,9 +3,20 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
+#include "flutter/shell/common/persistent_cache.h"
 
 namespace flutter {
 namespace testing {
+
+// Default maximum number of budgeted resources in the cache.
+static const int kGrCacheMaxCount = 8192;
+
+// Default maximum number of bytes of GPU memory of budgeted resources in the
+// cache.
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
 ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
     PlatformView::Delegate& delegate,
@@ -88,18 +99,33 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
     FML_DLOG(ERROR) << "Could not create Skia backend context.";
     return false;
   }
+  GrContextOptions options;
+  if (PersistentCache::cache_sksl()) {
+    FML_LOG(INFO) << "Cache SkSL";
+    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  }
+    PersistentCache::MarkStrategySet();
 
-  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context);
+    options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
+  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     FML_DLOG(ERROR) << "Failed to create GrContext";
     return false;
   }
 
-  context->setResourceCacheLimits(vulkan::kGrCacheMaxCount,
-                                  vulkan::kGrCacheMaxByteSize);
+  context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
   context_ = context;
+  std::vector<PersistentCache::SkSLCache> caches =
+      PersistentCache::GetCacheForProcess()->LoadSkSLs();
+  int compiled_count = 0;
+  for (const auto& cache : caches) {
+    compiled_count += context_->precompileShader(*cache.first, *cache.second);
+  }
+  FML_LOG(INFO) << "Found " << caches.size() << " SkSL shaders; precompiled "
+                << compiled_count;
 
   return true;
 }
@@ -141,6 +167,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
 std::unique_ptr<SurfaceFrame>
 ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     const SkISize& size) {
+  FML_LOG(INFO) << "size" << size.width() << " " << size.height();
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
   auto surface = SkSurface::MakeRenderTarget(context_.get(), SkBudgeted::kNo,

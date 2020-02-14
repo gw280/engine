@@ -21,7 +21,7 @@
 namespace fml {
 
 std::string CreateTemporaryDirectory() {
-  char directory_name[] = "/tmp/flutter_XXXXXXXX";
+  char directory_name[] = "/cache/flutter_XXXXXXXX";
   auto* result = ::mkdtemp(directory_name);
   if (result == nullptr) {
     return "";

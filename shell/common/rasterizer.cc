@@ -255,8 +255,11 @@ RasterStatus Rasterizer::DoDraw(
     return raster_status;
   }
 
+  FML_LOG(INFO) << "DUMPING";
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
+          FML_LOG(INFO) << "SKP";
+
     auto screenshot =
         ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
     persistent_cache->DumpSkp(*screenshot.data);
