@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
 
 namespace flutter {
@@ -93,7 +94,14 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
     return false;
   }
 
-  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context);
+  GrContextOptions options;
+  if (PersistentCache::cache_sksl()) {
+    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  }
+  PersistentCache::MarkStrategySet();
+  options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
+  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     FML_DLOG(ERROR) << "Failed to create GrContext";
