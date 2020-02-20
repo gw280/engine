@@ -206,6 +206,13 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
     return false;
   }
 
+#if OS_FUCHSIA
+  ssize_t size = ::write(temp_file.get(), data.GetMapping(), data.GetSize());
+  FML_LOG(ERROR) << "filename: " << file_name << " size " << size;
+  if (size == -1) {
+    return false;
+  }
+#else
   FileMapping mapping(temp_file, {FileMapping::Protection::kWrite});
   if (mapping.GetMutableMapping() == nullptr ||
       data.GetSize() != mapping.GetSize()) {
@@ -217,6 +224,7 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
   if (::msync(mapping.GetMutableMapping(), data.GetSize(), MS_SYNC) != 0) {
     return false;
   }
+#endif
 
   return ::renameat(base_directory.get(), temp_file_name.c_str(),
                     base_directory.get(), file_name) == 0;
