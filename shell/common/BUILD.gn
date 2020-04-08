@@ -265,6 +265,9 @@ if (enable_unittests) {
           dest = "assets/shelltest_screenshot.png"
         },
       ]
+
+      libraries = vulkan_validation_libs
+      resources += vulkan_icds
     }
   }
 
