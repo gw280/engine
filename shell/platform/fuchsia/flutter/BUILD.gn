@@ -12,7 +12,6 @@ import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 import("//flutter/vulkan/config.gni")
-import("engine_flutter_runner.gni")
 
 # Fuchsia uses its own custom Surface implementation.
 shell_gpu_configuration("fuchsia_legacy_gpu_configuration") {
@@ -25,6 +24,157 @@ shell_gpu_configuration("fuchsia_legacy_gpu_configuration") {
 # Things that explicitly being excluded:
 # 1. Kernel snapshot framework mode.
 # 2. Profiler symbols.
+
+source_set_maybe_fuchsia_legacy("flutter_runner_sources") {
+  sources = [
+    "accessibility_bridge.cc",
+    "accessibility_bridge.h",
+    "component.cc",
+    "component.h",
+    "engine.cc",
+    "engine.h",
+    "flutter_runner_product_configuration.cc",
+    "flutter_runner_product_configuration.h",
+    "fuchsia_intl.cc",
+    "fuchsia_intl.h",
+    "isolate_configurator.cc",
+    "isolate_configurator.h",
+    "logging.h",
+    "loop.cc",
+    "loop.h",
+    "platform_view.cc",
+    "platform_view.h",
+    "runner.cc",
+    "runner.h",
+    "session_connection.cc",
+    "session_connection.h",
+    "surface.cc",
+    "surface.h",
+    "task_observers.cc",
+    "task_observers.h",
+    "task_runner_adapter.cc",
+    "task_runner_adapter.h",
+    "thread.cc",
+    "thread.h",
+    "unique_fdio_ns.h",
+    "vsync_recorder.cc",
+    "vsync_recorder.h",
+    "vsync_waiter.cc",
+    "vsync_waiter.h",
+    "vulkan_surface.cc",
+    "vulkan_surface.h",
+    "vulkan_surface_pool.cc",
+    "vulkan_surface_pool.h",
+    "vulkan_surface_producer.cc",
+    "vulkan_surface_producer.h",
+  ]
+
+  sources_legacy = [
+    "compositor_context.cc",
+    "compositor_context.h",
+  ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_public_deps = [
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
+    "//third_party/rapidjson",
+    "//third_party/skia",
+  ]
+  flutter_deps = [
+    ":fuchsia_legacy_gpu_configuration",
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/fml",
+    "//flutter/vulkan",
+  ]
+  deps_legacy_and_next = [
+    "//flutter/flow:flow",
+    "//flutter/lib/ui:ui",
+    "//flutter/runtime:runtime",
+    "//flutter/shell/common:common",
+  ]
+
+  public_deps = [
+                  "$fuchsia_sdk_root/fidl:fuchsia.sys",
+                  "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+                  "$fuchsia_sdk_root/pkg:async-loop-cpp",
+                  "$fuchsia_sdk_root/pkg:fidl_cpp",
+                  "$fuchsia_sdk_root/pkg:scenic_cpp",
+                  "$fuchsia_sdk_root/pkg:sys_cpp",
+                  "$fuchsia_sdk_root/pkg:trace",
+                  "$fuchsia_sdk_root/pkg:trace-provider-so",
+                  "//flutter/shell/platform/fuchsia/runtime/dart/utils",
+                ] + flutter_public_deps
+
+  deps = [
+           "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+           "$fuchsia_sdk_root/fidl:fuchsia.fonts",
+           "$fuchsia_sdk_root/fidl:fuchsia.images",
+           "$fuchsia_sdk_root/fidl:fuchsia.intl",
+           "$fuchsia_sdk_root/fidl:fuchsia.io",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+           "$fuchsia_sdk_root/pkg:async-cpp",
+           "$fuchsia_sdk_root/pkg:async-default",
+           "$fuchsia_sdk_root/pkg:async-loop",
+           "$fuchsia_sdk_root/pkg:fdio",
+           "$fuchsia_sdk_root/pkg:syslog",
+           "$fuchsia_sdk_root/pkg:trace-engine",
+           "$fuchsia_sdk_root/pkg:vfs_cpp",
+           "$fuchsia_sdk_root/pkg:zx",
+           "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+           "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+         ] + flutter_deps
+}
+
+template("flutter_runner") {
+  assert(defined(invoker.output_name), "flutter_runner must define output_name")
+  assert(defined(invoker.extra_deps), "flutter_runner must define extra_deps")
+  assert(defined(invoker.product), "flutter_runner must define product")
+
+  invoker_output_name = invoker.output_name
+  extra_deps = invoker.extra_deps
+
+  extra_defines = []
+  if (defined(invoker.extra_defines)) {
+    extra_defines += invoker.extra_defines
+  }
+
+  runner_sources = [ "main.cc" ]
+
+  # The flags below are needed so that Dart's CPU profiler can walk the
+  # C++ stack.
+  runner_cflags = [ "-fno-omit-frame-pointer" ]
+  runner_ldflags = []
+  if (!invoker.product) {
+    # This flag is needed so that the call to dladdr() in Dart's native symbol
+    # resolver can report good symbol information for the CPU profiler.
+    runner_ldflags = [ "-rdynamic" ]
+  }
+
+  executable(target_name) {
+    output_name = invoker_output_name
+
+    sources = runner_sources
+    cflags = runner_cflags
+    ldflags = runner_ldflags
+    defines = extra_defines
+
+    deps = [ ":flutter_runner_sources_fuchsia_legacy" ] + extra_deps
+  }
+
+  executable(target_name + "_next") {
+    output_name = invoker_output_name + "_next"
+
+    sources = runner_sources
+    cflags = runner_cflags
+    ldflags = runner_ldflags
+    defines = extra_defines
+
+    deps = [ ":flutter_runner_sources" ] + extra_deps
+  }
+}
 
 flutter_runner("jit") {
   output_name = "flutter_jit_runner"
@@ -82,11 +232,16 @@ flutter_runner("aot_product") {
 
 template("jit_runner") {
   product = defined(invoker.product) && invoker.product
+  next = defined(invoker.next) && invoker.next
 
   product_suffix = ""
-
   if (product) {
     product_suffix = "_product"
+  }
+
+  next_suffix = ""
+  if (next) {
+    next_suffix = "_next"
   }
 
   fuchsia_archive(target_name) {
@@ -94,7 +249,7 @@ template("jit_runner") {
     snapshot_gen_dir = get_label_info(snapshot_label, "target_gen_dir")
 
     deps = [
-      ":jit${product_suffix}",
+      ":jit${product_suffix}${next_suffix}",
       snapshot_label,
     ]
 
@@ -105,9 +260,10 @@ template("jit_runner") {
       ]
     }
 
-    binary = "flutter_jit${product_suffix}_runner"
+    binary = "flutter_jit${product_suffix}_runner${next_suffix}"
 
     meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+    cmx_file = "$meta_dir/flutter_jit${product_suffix}_runner.cmx"
 
     resources = [
       {
@@ -166,25 +322,27 @@ template("jit_runner") {
     resources += _vulkan_icds
 
     libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
-        dest = "flutter_jit${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
 template("aot_runner") {
   product = defined(invoker.product) && invoker.product
+  next = defined(invoker.next) && invoker.next
+
   product_suffix = ""
   if (product) {
     product_suffix = "_product"
   }
 
+  next_suffix = ""
+  if (next) {
+    next_suffix = "_next"
+  }
+
   fuchsia_archive(target_name) {
-    deps = [ ":aot${product_suffix}" ]
+    deps = [
+      ":aot${product_suffix}${next_suffix}",
+    ]
 
     if (!product) {
       deps += [
@@ -194,8 +352,9 @@ template("aot_runner") {
     }
 
     meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+    cmx_file = "$meta_dir/flutter_aot${product_suffix}_runner.cmx"
 
-    binary = "flutter_aot${product_suffix}_runner"
+    binary = "flutter_aot${product_suffix}_runner${next_suffix}"
 
     resources = [
       {
@@ -231,13 +390,6 @@ template("aot_runner") {
     resources += _vulkan_icds
 
     libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
-        dest = "flutter_aot${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
@@ -257,6 +409,26 @@ jit_runner("flutter_jit_product_runner") {
   product = true
 }
 
+aot_runner("flutter_aot_runner_next") {
+  product = false
+  next = true
+}
+
+aot_runner("flutter_aot_product_runner_next") {
+  product = true
+  next = true
+}
+
+jit_runner("flutter_jit_runner_next") {
+  product = false
+  next = true
+}
+
+jit_runner("flutter_jit_product_runner_next") {
+  product = true
+  next = true
+}
+
 test_fixtures("flutter_runner_fixtures") {
   fixtures = []
 }
@@ -267,41 +439,14 @@ executable("flutter_runner_unittests") {
   output_name = "flutter_runner_tests"
 
   sources = [
-    "accessibility_bridge.cc",
-    "accessibility_bridge.h",
     "accessibility_bridge_unittest.cc",
-    "component.cc",
-    "component.h",
     "component_unittest.cc",
     "flutter_runner_fakes.h",
-    "flutter_runner_product_configuration.cc",
-    "flutter_runner_product_configuration.h",
-    "fuchsia_intl.cc",
-    "fuchsia_intl.h",
     "fuchsia_intl_unittest.cc",
-    "logging.h",
-    "loop.cc",
-    "loop.h",
-    "platform_view.cc",
-    "platform_view.h",
     "platform_view_unittest.cc",
-    "runner.cc",
-    "runner.h",
     "runner_unittest.cc",
-    "surface.cc",
-    "surface.h",
-    "task_observers.cc",
-    "task_observers.h",
-    "task_runner_adapter.cc",
-    "task_runner_adapter.h",
     "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/vsync_recorder_unittests.cc",
-    "thread.cc",
-    "thread.h",
-    "vsync_recorder.cc",
-    "vsync_recorder.h",
-    "vsync_waiter.cc",
-    "vsync_waiter.h",
     "vsync_waiter_unittests.cc",
   ]
 
@@ -309,8 +454,8 @@ executable("flutter_runner_unittests") {
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   deps = [
-    ":aot",
     ":flutter_runner_fixtures",
+    ":flutter_runner_sources_fuchsia_legacy",
     "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
     "//build/fuchsia/pkg:async-default",
     "//build/fuchsia/pkg:async-loop-cpp",
@@ -335,8 +480,6 @@ executable("flutter_runner_tzdata_unittests") {
   output_name = "flutter_runner_tzdata_tests"
 
   sources = [
-    "runner.cc",
-    "runner.h",
     "runner_tzdata_unittest.cc",
   ]
 
@@ -344,8 +487,8 @@ executable("flutter_runner_tzdata_unittests") {
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   deps = [
-    ":aot",
     ":flutter_runner_fixtures",
+    ":flutter_runner_sources_fuchsia_legacy",
     "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
     "//build/fuchsia/pkg:async-loop-cpp",
     "//build/fuchsia/pkg:async-loop-default",
@@ -370,46 +513,7 @@ executable("flutter_runner_scenic_unittests") {
   output_name = "flutter_runner_scenic_tests"
 
   sources = [
-    "component.cc",
-    "component.h",
-    "compositor_context.cc",
-    "compositor_context.h",
-    "engine.cc",
-    "engine.h",
-    "fuchsia_intl.cc",
-    "fuchsia_intl.h",
-    "isolate_configurator.cc",
-    "isolate_configurator.h",
-    "logging.h",
-    "loop.cc",
-    "loop.h",
-    "platform_view.cc",
-    "platform_view.h",
-    "runner.cc",
-    "runner.h",
-    "session_connection.cc",
-    "session_connection.h",
-    "surface.cc",
-    "surface.h",
-    "task_observers.cc",
-    "task_observers.h",
-    "task_runner_adapter.cc",
-    "task_runner_adapter.h",
     "tests/session_connection_unittests.cc",
-    "thread.cc",
-    "thread.h",
-    "unique_fdio_ns.h",
-    "vsync_recorder.cc",
-    "vsync_recorder.h",
-    "vsync_waiter.cc",
-    "vsync_waiter.h",
-    "vsync_waiter_unittests.cc",
-    "vulkan_surface.cc",
-    "vulkan_surface.h",
-    "vulkan_surface_pool.cc",
-    "vulkan_surface_pool.h",
-    "vulkan_surface_producer.cc",
-    "vulkan_surface_producer.h",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
@@ -417,7 +521,7 @@ executable("flutter_runner_scenic_unittests") {
 
   deps = [
     ":flutter_runner_fixtures",
-    ":jit",
+    ":flutter_runner_sources_fuchsia_legacy",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
     "$fuchsia_sdk_root/pkg:trace-provider-so",
     "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
@@ -442,7 +546,9 @@ executable("flutter_runner_scenic_unittests") {
     "//third_party/skia",
   ]
 
-  public_deps = [ "//third_party/googletest:gtest" ]
+  public_deps = [
+    "//third_party/googletest:gtest",
+  ]
 }
 
 # When adding a new dep here, please also ensure the dep is added to
@@ -450,7 +556,9 @@ executable("flutter_runner_scenic_unittests") {
 fuchsia_archive("flutter_runner_tests") {
   testonly = true
 
-  deps = [ ":flutter_runner_unittests" ]
+  deps = [
+    ":flutter_runner_unittests",
+  ]
 
   binary = "$target_name"
 
@@ -491,7 +599,9 @@ fuchsia_archive("flutter_runner_tests") {
 fuchsia_archive("flutter_runner_tzdata_tests") {
   testonly = true
 
-  deps = [ ":flutter_runner_tzdata_unittests" ]
+  deps = [
+    ":flutter_runner_tzdata_unittests",
+  ]
 
   binary = "$target_name"
 
@@ -517,7 +627,9 @@ fuchsia_archive("flutter_runner_tzdata_tests") {
 fuchsia_archive("flutter_runner_scenic_tests") {
   testonly = true
 
-  deps = [ ":flutter_runner_scenic_unittests" ]
+  deps = [
+    ":flutter_runner_scenic_unittests",
+  ]
 
   binary = "$target_name"
 
@@ -541,13 +653,17 @@ fuchsia_archive("flutter_runner_scenic_tests") {
 }
 
 fuchsia_test_archive("fml_tests") {
-  deps = [ "//flutter/fml:fml_unittests" ]
+  deps = [
+    "//flutter/fml:fml_unittests",
+  ]
 
   binary = "fml_unittests"
 }
 
 fuchsia_test_archive("flow_tests") {
-  deps = [ "//flutter/flow:flow_unittests" ]
+  deps = [
+    "//flutter/flow:flow_unittests",
+  ]
 
   binary = "flow_unittests"
 
@@ -571,7 +687,9 @@ fuchsia_test_archive("flow_tests") {
 }
 
 fuchsia_test_archive("flow_tests_next") {
-  deps = [ "//flutter/flow:flow_unittests_next" ]
+  deps = [
+    "//flutter/flow:flow_unittests_next",
+  ]
 
   binary = "flow_unittests_next"
 
@@ -687,13 +805,17 @@ fuchsia_test_archive("shell_tests_next") {
 }
 
 fuchsia_test_archive("testing_tests") {
-  deps = [ "//flutter/testing:testing_unittests" ]
+  deps = [
+    "//flutter/testing:testing_unittests",
+  ]
 
   binary = "testing_unittests"
 }
 
 fuchsia_test_archive("txt_tests") {
-  deps = [ "//flutter/third_party/txt:txt_unittests" ]
+  deps = [
+    "//flutter/third_party/txt:txt_unittests",
+  ]
 
   binary = "txt_unittests"
 

@@ -8,21 +8,25 @@
 #include <zircon/status.h>
 
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
-#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
+#include "flutter/shell/common/shell.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
 #include "../runtime/dart/utils/files.h"
-#include "compositor_context.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "task_runner_adapter.h"
 #include "thread.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "compositor_context.h"  // nogncheck
+#endif
 
 namespace flutter_runner {
 namespace {
@@ -199,6 +203,7 @@ Engine::Engine(Delegate& delegate,
           });
 
   // Setup the callback that will instantiate the rasterizer.
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       fml::MakeCopyable([this](flutter::Shell& shell) mutable {
         FML_DCHECK(session_connection_);
@@ -215,6 +220,13 @@ Engine::Engine(Delegate& delegate,
             /*compositor_context=*/std::move(compositor_context),
             /*is_gpu_disabled_sync_switch=*/shell.GetIsGpuDisabledSyncSwitch());
       });
+#else
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
+      [](flutter::Shell& shell) {
+        return std::make_unique<flutter::Rasterizer>(
+            shell, shell.GetTaskRunners(), shell.GetIsGpuDisabledSyncSwitch());
+      };
+#endif
 
   settings.root_isolate_create_callback =
       std::bind(&Engine::OnMainIsolateStart, this);

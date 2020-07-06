@@ -10,15 +10,15 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
-#include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
+#include "third_party/rapidjson/include/rapidjson/stringbuffer.h"
+#include "third_party/rapidjson/include/rapidjson/writer.h"
+
+#include "../runtime/dart/utils/inlines.h"
 #include "flutter_runner_product_configuration.h"
 #include "logging.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "runtime/dart/utils/inlines.h"
 #include "vsync_waiter.h"
 
 namespace flutter_runner {
@@ -242,6 +242,7 @@ void PlatformView::OnScenicEvent(
             }
             break;
           }
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
           case fuchsia::ui::gfx::Event::Tag::kViewConnected:
             OnChildViewConnected(event.gfx().view_connected().view_holder_id);
             break;
@@ -254,6 +255,7 @@ void PlatformView::OnScenicEvent(
                 event.gfx().view_state_changed().view_holder_id,
                 event.gfx().view_state_changed().state.is_rendering);
             break;
+#endif
           case fuchsia::ui::gfx::Event::Tag::Invalid:
             FML_DCHECK(false) << "Flutter PlatformView::OnScenicEvent: Got "
                                  "an invalid GFX event.";
@@ -311,6 +313,7 @@ void PlatformView::OnScenicEvent(
   }
 }
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 void PlatformView::OnChildViewConnected(scenic::ResourceId view_holder_id) {
   task_runners_.GetUITaskRunner()->PostTask([view_holder_id]() {
     flutter::SceneHost::OnViewConnected(view_holder_id);
@@ -329,6 +332,7 @@ void PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
     flutter::SceneHost::OnViewStateChanged(view_holder_id, state);
   });
 }
+#endif
 
 static flutter::PointerData::Change GetChangeFromPointerEventPhase(
     fuchsia::ui::input::PointerEventPhase phase) {

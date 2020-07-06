@@ -83,17 +83,22 @@ source_set_maybe_fuchsia_legacy("flow") {
   sources_legacy = [
     "layers/child_scene_layer.cc",
     "layers/child_scene_layer.h",
-    "scene_update_context.cc",
-    "scene_update_context.h",
-    "view_holder.cc",
-    "view_holder.h",
   ]
 
-  public_deps_legacy = [
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
-    "$fuchsia_sdk_root/pkg:scenic_cpp",
-  ]
+  if (is_fuchsia) {
+    sources += [
+      "scene_update_context.cc",
+      "scene_update_context.h",
+      "view_holder.cc",
+      "view_holder.h",
+    ]
+
+    public_deps = [
+      "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+      "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+      "$fuchsia_sdk_root/pkg:scenic_cpp",
+    ]
+  }
 }
 
 if (enable_unittests) {

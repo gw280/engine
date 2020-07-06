@@ -14,7 +14,7 @@
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
-#include "flutter/flow/embedded_views.h"
+#include "flutter/common/settings.h"
 #include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"

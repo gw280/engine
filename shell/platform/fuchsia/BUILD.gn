@@ -82,7 +82,9 @@ group("fuchsia") {
     "dart_runner:dart_aot_${product_suffix}runner",
     "dart_runner:dart_jit_${product_suffix}runner",
     "flutter:flutter_aot_${product_suffix}runner",
+    "flutter:flutter_aot_${product_suffix}runner_next",
     "flutter:flutter_jit_${product_suffix}runner",
+    "flutter:flutter_jit_${product_suffix}runner_next",
   ]
 }
 
