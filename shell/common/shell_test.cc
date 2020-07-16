@@ -101,8 +101,8 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double height,
                              LayerTreeBuilder builder) {
   PumpOneFrame(shell,
-               flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+               flutter::ViewportMetrics{1.0, width, height, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0},
                std::move(builder));
 }
 
@@ -132,7 +132,6 @@ void ShellTest::PumpOneFrame(Shell* shell,
         auto layer_tree = std::make_unique<LayerTree>(
             SkISize::Make(viewport_metrics.physical_width,
                           viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.physical_depth),
             static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
