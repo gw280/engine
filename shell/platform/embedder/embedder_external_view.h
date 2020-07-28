@@ -9,10 +9,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "flutter/flow/canvas_spy.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/common/canvas_spy.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 

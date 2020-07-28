@@ -8,6 +8,8 @@ import("//flutter/testing/testing.gni")
 
 source_set_maybe_fuchsia_legacy("flow") {
   sources = [
+    "canvas_spy.cc",
+    "canvas_spy.h",
     "compositor_context.cc",
     "compositor_context.h",
     "embedded_views.cc",
@@ -128,6 +130,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "canvas_spy_unittests.cc",
       "embedded_view_params_unittests.cc",
       "flow_run_all_unittests.cc",
       "flow_test_utils.cc",

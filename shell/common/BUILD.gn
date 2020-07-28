@@ -62,8 +62,6 @@ source_set_maybe_fuchsia_legacy("common") {
   sources = [
     "animator.cc",
     "animator.h",
-    "canvas_spy.cc",
-    "canvas_spy.h",
     "engine.cc",
     "engine.h",
     "isolate_configuration.cc",
@@ -257,7 +255,6 @@ if (enable_unittests) {
 
     sources = [
       "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",

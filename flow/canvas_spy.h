@@ -9,8 +9,8 @@
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 #include "third_party/skia/include/utils/SkNoDrawCanvas.h"
 
-#ifndef FLUTTER_SHELL_COMMON_CANVAS_SPY_H_
-#define FLUTTER_SHELL_COMMON_CANVAS_SPY_H_
+#ifndef FLUTTER_FLOW_CANVAS_SPY_H_
+#define FLUTTER_FLOW_CANVAS_SPY_H_
 
 namespace flutter {
 
@@ -218,4 +218,4 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_COMMON_SKIA_EVENT_TRACER_IMPL_H_
+#endif  // FLUTTER_FLOW_CANVAS_SPY_H_

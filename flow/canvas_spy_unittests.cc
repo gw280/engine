@@ -62,5 +62,6 @@ TEST(CanvasSpyTest, SpiedCanvasIsDrawing) {
 
   ASSERT_EQ(::memcmp(actual.addr(), expected.addr(), size), 0);
 }
+
 }  // namespace testing
 }  // namespace flutter
