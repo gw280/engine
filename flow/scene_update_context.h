@@ -10,29 +10,39 @@
 #include <lib/ui/scenic/cpp/session.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
-#include <cfloat>
 #include <memory>
-#include <set>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "third_party/skia/include/core/SkColor.h"   // nogncheck
+#include "third_party/skia/include/core/SkRect.h"    // nogncheck
+#include "third_party/skia/include/core/SkScalar.h"  // nogncheck
+#else
+#include "flutter/flow/canvas_spy.h"                          // nogncheck
+#include "third_party/skia/include/core/SkPictureRecorder.h"  // nogncheck
+#endif
 
 namespace flutter {
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 class Layer;
+#endif
 
-// Scenic currently lacks an API to enable rendering of alpha channel; this only
-// happens if there is a OpacityNode higher in the tree with opacity != 1. For
-// now, clamp to a infinitesimally smaller value than 1, which does not cause
-// visual problems in practice.
+// Scenic currently lacks an API to enable rendering of alpha channel; this
+// only happens if there is a OpacityNode higher in the tree with opacity
+// != 1. For now, clamp to a infinitesimally smaller value than 1, which does
+// not cause visual problems in practice.
 constexpr float kOneMinusEpsilon = 1 - FLT_EPSILON;
 
 // How much layers are separated in Scenic z elevation.
-constexpr float kScenicZElevationBetweenLayers = 10.f;
+constexpr float kScenicZElevationBetweenLayers = 0.1f;
 
 class SessionWrapper {
  public:
@@ -44,6 +54,7 @@ class SessionWrapper {
 
 class SceneUpdateContext : public flutter::ExternalViewEmbedder {
  public:
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   class Entity {
    public:
     Entity(SceneUpdateContext& context);
@@ -77,8 +88,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   class Frame : public Entity {
    public:
     // When layer is not nullptr, the frame is associated with a layer subtree
-    // rooted with that layer. The frame may then create a surface that will be
-    // retained for that layer.
+    // rooted with that layer. The frame may then create a surface that will
+    // be retained for that layer.
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
@@ -116,19 +127,34 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     scenic::Material material;
     std::vector<Layer*> layers;
   };
+#else
+  struct CompositorSurface {
+    scenic::Image* compositor_image;
+    sk_sp<SkSurface> sk_surface;
+  };
+  using CreateSurfaceCallback =
+      std::function<CompositorSurface(const SkISize&)>;
+  using PresentSurfacesCallback = std::function<void()>;
+#endif
 
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
+#if !defined(LEGACY_FUCHSIA_EMBEDDER)
+                     CreateSurfaceCallback create_surface,
+                     PresentSurfacesCallback present_surfaces,
+#endif
                      SessionWrapper& session);
   ~SceneUpdateContext() = default;
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
   float alphaf() { return alpha_; }
 
   // Returns all `PaintTask`s generated for the current frame.
   std::vector<PaintTask> GetPaintTasks();
+#endif
 
   // Enable/disable wireframe rendering around the root view bounds.
   void EnableWireframe(bool enable);
@@ -137,53 +163,54 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   void Reset();
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override { return nullptr; }
+  SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
-  void CancelFrame() override {}
+  void CancelFrame() override;
 
   // |ExternalViewEmbedder|
   void BeginFrame(
       SkISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  void SubmitFrame(GrDirectContext* context,
+                   std::unique_ptr<SurfaceFrame> frame) override;
+
+  // |ExternalViewEmbedder|
+  void EndFrame(
+      bool should_resubmit_frame,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
-      std::unique_ptr<EmbeddedViewParams> params) override {}
+      std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override {
-    return std::vector<SkCanvas*>();
-  }
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  virtual SkCanvas* CompositeEmbeddedView(int view_id) override {
-    return nullptr;
-  }
+  std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   void CreateView(int64_t view_id, bool hit_testable, bool focusable);
   void DestroyView(int64_t view_id);
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   void UpdateView(int64_t view_id,
                   const SkPoint& offset,
                   const SkSize& size,
                   std::optional<bool> override_hit_testable = std::nullopt);
+#endif
 
  private:
-  void CreateFrame(scenic::EntityNode& entity_node,
-                   const SkRRect& rrect,
-                   SkColor color,
-                   SkAlpha opacity,
-                   const SkRect& paint_bounds,
-                   std::vector<Layer*> paint_layers);
-
   SessionWrapper& session_;
 
   scenic::View root_view_;
   scenic::EntityNode root_node_;
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   std::vector<PaintTask> paint_tasks_;
 
   Entity* top_entity_ = nullptr;
@@ -193,6 +220,38 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   float next_elevation_ = 0.f;
   float alpha_ = 1.f;
+#else
+  struct CompositorLayer {
+    CompositorLayer(const SkISize& frame_size,
+                    std::optional<EmbeddedViewParams> view_params)
+        : embedded_view_params(std::move(view_params)),
+          recorder(std::make_unique<SkPictureRecorder>()),
+          canvas_spy(std::make_unique<CanvasSpy>(
+              recorder->beginRecording(frame_size.width(),
+                                       frame_size.height()))),
+          surface_size(frame_size) {}
+
+    std::optional<EmbeddedViewParams> embedded_view_params;
+    std::unique_ptr<SkPictureRecorder> recorder;
+    std::unique_ptr<CanvasSpy> canvas_spy;
+    SkISize surface_size;
+  };
+  struct CompositorShape {
+    scenic::ShapeNode shape_node;
+    scenic::Material material;
+  };
+  using CompositorLayerId = std::optional<int64_t>;
+
+  std::unordered_map<CompositorLayerId, CompositorLayer> frame_layers_;
+  std::vector<CompositorShape> scenic_shapes_;
+  std::vector<CompositorLayerId> composition_order_;
+
+  CreateSurfaceCallback create_surface_callback_;
+  PresentSurfacesCallback present_surfaces_callback_;
+
+  SkISize pending_frame_size_ = SkISize::Make(0, 0);
+  float pending_device_pixel_ratio_ = 1.f;
+#endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

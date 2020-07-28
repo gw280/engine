@@ -55,6 +55,7 @@ class ViewHolder {
               scenic::ContainerNode& container,
               const SkPoint& offset,
               const SkSize& size,
+              float depth,
               SkAlpha opacity,
               bool hit_testable);
 

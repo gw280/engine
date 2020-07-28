@@ -61,8 +61,8 @@ void ViewHolder::Create(zx_koid_t id,
   }
 
   auto* bindings = tls_view_holder_bindings.get();
-  FML_DCHECK(bindings);
-  FML_DCHECK(bindings->find(id) == bindings->end());
+  FML_CHECK(bindings);
+  FML_CHECK(bindings->find(id) == bindings->end());
 
   auto view_holder = std::make_unique<ViewHolder>(std::move(ui_task_runner),
                                                   std::move(view_holder_token),
@@ -104,15 +104,17 @@ void ViewHolder::Update(scenic::Session* session,
                         scenic::ContainerNode& container,
                         const SkPoint& offset,
                         const SkSize& size,
+                        float depth,
                         SkAlpha opacity,
                         bool hit_testable) {
   if (pending_view_holder_token_.value) {
     entity_node_ = std::make_unique<scenic::EntityNode>(session);
     opacity_node_ = std::make_unique<scenic::OpacityNodeHACK>(session);
     view_holder_ = std::make_unique<scenic::ViewHolder>(
-        session, std::move(pending_view_holder_token_), "Flutter SceneHost");
+        session, std::move(pending_view_holder_token_), "FlutterPlatformView");
+    opacity_node_->SetLabel("FlutterPlatformView::OpacityMutator");
+    entity_node_->SetLabel("FlutterPlatformView::TransformMutator");
     opacity_node_->AddChild(*entity_node_);
-    opacity_node_->SetLabel("flutter::ViewHolder");
     entity_node_->Attach(*view_holder_);
     if (ui_task_runner_ && pending_view_holder_token_.value) {
       ui_task_runner_->PostTask(
@@ -128,7 +130,7 @@ void ViewHolder::Update(scenic::Session* session,
 
   container.AddChild(*opacity_node_);
   opacity_node_->SetOpacity(opacity / 255.0f);
-  entity_node_->SetTranslation(offset.x(), offset.y(), -0.1f);
+  entity_node_->SetTranslation(offset.x(), offset.y(), depth);
   entity_node_->SetHitTestBehavior(
       hit_testable ? fuchsia::ui::gfx::HitTestBehavior::kDefault
                    : fuchsia::ui::gfx::HitTestBehavior::kSuppress);
@@ -151,6 +153,11 @@ void ViewHolder::SetProperties(double width,
                                bool focusable) {
   pending_properties_ = ToViewProperties(width, height, insetTop, insetRight,
                                          insetBottom, insetLeft, focusable);
+  FML_LOG(ERROR) << "Set ViewProperties to "
+                 << pending_properties_.bounding_box.min.x << "x"
+                 << pending_properties_.bounding_box.min.y << " and "
+                 << pending_properties_.bounding_box.max.x << "x"
+                 << pending_properties_.bounding_box.max.y;
   has_pending_properties_ = true;
 }
 

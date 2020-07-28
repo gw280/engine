@@ -127,9 +127,28 @@ Engine::Engine(Delegate& delegate,
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {}, vsync_handle);
         surface_producer_.emplace(session_connection_->get());
-        scene_update_context_.emplace(thread_label_, std::move(view_token),
-                                      std::move(view_ref_pair),
-                                      session_connection_.value());
+        scene_update_context_.emplace(
+            thread_label_, std::move(view_token), std::move(view_ref_pair),
+#if !defined(LEGACY_FUCHSIA_EMBEDDER)
+            [this](const SkISize& size)
+                -> flutter::SceneUpdateContext::CompositorSurface {
+              auto surface = surface_producer_->ProduceSurface(size);
+              flutter::SceneUpdateContext::CompositorSurface new_surface{
+                  .compositor_image = surface->GetImage(),
+                  .sk_surface = surface->GetSkiaSurface(),
+              };
+
+              frame_surfaces_.emplace_back(std::move(surface));
+
+              return new_surface;
+            },
+            [this]() {
+              surface_producer_->OnSurfacesPresented(
+                  std::move(frame_surfaces_));
+              frame_surfaces_.clear();
+            },
+#endif
+            session_connection_.value());
       }));
 
   // Grab the parent environment services. The platform view may want to

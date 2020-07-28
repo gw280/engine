@@ -63,6 +63,9 @@ class Engine final {
   const std::string thread_label_;
   std::array<Thread, 3> threads_;
 
+#if !defined(LEGACY_FUCHSIA_EMBEDDER)
+  std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces_;
+#endif
   std::optional<SessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
   std::optional<flutter::SceneUpdateContext> scene_update_context_;

@@ -289,7 +289,14 @@ std::unique_ptr<TestContext> InitTest() {
   // Init SceneUpdateContext.
   context->scene_update_context = std::make_unique<SceneUpdateContext>(
       "fuchsia_layer_unittest", fuchsia::ui::views::ViewToken(),
-      scenic::ViewRefPair::New(), *(context->mock_session_wrapper));
+      scenic::ViewRefPair::New(),
+#if !defined(LEGACY_FUCHSIA_EMBEDDER)
+      [](auto) -> SceneUpdateContext::CompositorSurface {
+        return SceneUpdateContext::CompositorSurface{};
+      },
+      []() {},
+#endif
+      *(context->mock_session_wrapper));
 
   // Init PrerollContext.
   context->preroll_context = std::unique_ptr<PrerollContext>(new PrerollContext{
