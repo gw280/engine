@@ -133,19 +133,6 @@ SceneUpdateContext::ResetAndGetPaintTasks() {
   return frame_paint_tasks;
 }
 
-void SceneUpdateContext::UpdateScene(int64_t view_id,
-                                     const SkPoint& offset,
-                                     const SkSize& size) {
-  auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
-
-  view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
-                             view_holder->focusable());
-  view_holder->UpdateScene(*this, offset, size,
-                           SkScalarRoundToInt(alphaf() * 255),
-                           view_holder->hit_testable());
-}
-
 void SceneUpdateContext::CreateView(int64_t view_id,
                                     bool hit_testable,
                                     bool focusable) {
@@ -162,6 +149,22 @@ void SceneUpdateContext::CreateView(int64_t view_id,
 
 void SceneUpdateContext::DestroyView(int64_t view_id) {
   ViewHolder::Destroy(view_id);
+}
+
+void SceneUpdateContext::UpdateView(int64_t view_id,
+                                    const SkPoint& offset,
+                                    const SkSize& size,
+                                    std::optional<bool> override_hit_testable) {
+  auto* view_holder = ViewHolder::FromId(view_id);
+  FML_DCHECK(view_holder);
+
+  bool hit_testable = override_hit_testable.has_value()
+                          ? override_hit_testable.value()
+                          : view_holder->hit_testable();
+  view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
+                             view_holder->focusable());
+  view_holder->Update(session_, top_entity_->embedder_node(), offset, size,
+                      SkScalarRoundToInt(alphaf() * 255), hit_testable);
 }
 
 SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)

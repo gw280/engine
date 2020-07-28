@@ -148,10 +148,11 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   }
 
   void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-
   void DestroyView(int64_t view_id);
-
-  void UpdateScene(int64_t view_id, const SkPoint& offset, const SkSize& size);
+  void UpdateView(int64_t view_id,
+                  const SkPoint& offset,
+                  const SkSize& size,
+                  std::optional<bool> override_hit_testable = std::nullopt);
 
  private:
   void CreateFrame(scenic::EntityNode entity_node,
