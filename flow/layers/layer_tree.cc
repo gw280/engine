@@ -60,29 +60,6 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   return context.surface_needs_readback;
 }
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-void LayerTree::UpdateScene(SceneUpdateContext& context,
-                            scenic::ContainerNode& container) {
-  TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
-
-  const float inv_dpr = 1.0f / device_pixel_ratio_;
-  SceneUpdateContext::Transform transform(context, inv_dpr, inv_dpr, 1.0f);
-
-  SceneUpdateContext::Frame frame(
-      context,
-      SkRRect::MakeRect(
-          SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, SK_AlphaOPAQUE, "flutter::LayerTree");
-  if (root_layer_->needs_system_composite()) {
-    root_layer_->UpdateScene(context);
-  }
-  if (root_layer_->needs_painting()) {
-    frame.AddPaintLayer(root_layer_.get());
-  }
-  container.AddChild(transform.entity_node());
-}
-#endif
-
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
                       bool ignore_raster_cache) const {
   TRACE_EVENT0("flutter", "LayerTree::Paint");
