@@ -118,10 +118,7 @@ group("flutter") {
       ]
     }
 
-    # TODO(): Enable embedder_unittests on fucsia.
-    if (!is_fuchsia) {
-      public_deps += [ "//flutter/shell/platform/embedder:embedder_unittests" ]
-    }
+    public_deps += [ "//flutter/shell/platform/embedder:embedder_unittests" ]
 
     # Unit tests for desktop embeddings should only be built if the desktop
     # embeddings are being built.

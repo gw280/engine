@@ -10,8 +10,8 @@ import("//flutter/testing/testing.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
   enable_software = true
-  enable_vulkan = false
-  enable_gl = true
+  enable_vulkan = is_fuchsia
+  enable_gl = !is_fuchsia
   enable_metal = false
 }
 
@@ -127,7 +127,7 @@ test_fixtures("fixtures") {
   ]
 }
 
-if (current_toolchain == host_toolchain) {
+if (current_toolchain == host_toolchain || is_fuchsia) {
   executable("embedder_unittests") {
     testonly = true
 
@@ -141,10 +141,6 @@ if (current_toolchain == host_toolchain) {
       "tests/embedder_config_builder.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
-      "tests/embedder_test_compositor.cc",
-      "tests/embedder_test_compositor.h",
-      "tests/embedder_test_context.cc",
-      "tests/embedder_test_context.h",
       "tests/embedder_unittests.cc",
     ]
 
@@ -156,12 +152,24 @@ if (current_toolchain == host_toolchain) {
       "//flutter/runtime",
       "//flutter/testing",
       "//flutter/testing:dart",
-      "//flutter/testing:opengl",
       "//flutter/testing:skia",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
+
+    if (test_enable_gl) {
+      sources += [
+        "tests/embedder_test_compositor.cc",
+        "tests/embedder_test_compositor.h",
+        "tests/embedder_test_context.cc",
+        "tests/embedder_test_context.h",
+      ]
+
+      deps += [
+        "//flutter/testing:opengl",
+      ]
+    }
   }
 }
 

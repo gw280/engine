@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
@@ -11,16 +11,16 @@
 namespace flutter {
 namespace testing {
 
-EmbedderTestCompositor::EmbedderTestCompositor(SkISize surface_size,
+EmbedderTestCompositorGL::EmbedderTestCompositorGL(SkISize surface_size,
                                                sk_sp<GrDirectContext> context)
     : surface_size_(surface_size), context_(context) {
   FML_CHECK(!surface_size_.isEmpty()) << "Surface size must not be empty";
   FML_CHECK(context_);
 }
 
-EmbedderTestCompositor::~EmbedderTestCompositor() = default;
+EmbedderTestCompositorGL::~EmbedderTestCompositorGL() = default;
 
-void EmbedderTestCompositor::SetRenderTargetType(RenderTargetType type) {
+void EmbedderTestCompositorGL::SetRenderTargetType(RenderTargetType type) {
   type_ = type;
 }
 
@@ -32,7 +32,7 @@ static void InvokeAllCallbacks(const std::vector<fml::closure>& callbacks) {
   }
 }
 
-bool EmbedderTestCompositor::CreateBackingStore(
+bool EmbedderTestCompositorGL::CreateBackingStore(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
   bool success = false;
@@ -57,7 +57,7 @@ bool EmbedderTestCompositor::CreateBackingStore(
   return success;
 }
 
-bool EmbedderTestCompositor::CollectBackingStore(
+bool EmbedderTestCompositorGL::CollectBackingStore(
     const FlutterBackingStore* backing_store) {
   // We have already set the destruction callback for the various backing
   // stores. Our user_data is just the canvas from that backing store and does
@@ -68,7 +68,7 @@ bool EmbedderTestCompositor::CollectBackingStore(
   return true;
 }
 
-bool EmbedderTestCompositor::UpdateOffscrenComposition(
+bool EmbedderTestCompositorGL::UpdateOffscrenComposition(
     const FlutterLayer** layers,
     size_t layers_count) {
   last_composition_ = nullptr;
@@ -158,11 +158,11 @@ bool EmbedderTestCompositor::UpdateOffscrenComposition(
   return true;
 }
 
-sk_sp<SkImage> EmbedderTestCompositor::GetLastComposition() {
+sk_sp<SkImage> EmbedderTestCompositorGL::GetLastComposition() {
   return last_composition_;
 }
 
-bool EmbedderTestCompositor::Present(const FlutterLayer** layers,
+bool EmbedderTestCompositorGL::Present(const FlutterLayer** layers,
                                      size_t layers_count) {
   if (!UpdateOffscrenComposition(layers, layers_count)) {
     FML_LOG(ERROR)
@@ -184,7 +184,7 @@ bool EmbedderTestCompositor::Present(const FlutterLayer** layers,
   return true;
 }
 
-bool EmbedderTestCompositor::CreateFramebufferRenderSurface(
+bool EmbedderTestCompositorGL::CreateFramebufferRenderSurface(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
   const auto image_info =
@@ -233,7 +233,7 @@ bool EmbedderTestCompositor::CreateFramebufferRenderSurface(
   return true;
 }
 
-bool EmbedderTestCompositor::CreateTextureRenderSurface(
+bool EmbedderTestCompositorGL::CreateTextureRenderSurface(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
   const auto image_info =
@@ -284,7 +284,7 @@ bool EmbedderTestCompositor::CreateTextureRenderSurface(
   return true;
 }
 
-bool EmbedderTestCompositor::CreateSoftwareRenderSurface(
+bool EmbedderTestCompositorGL::CreateSoftwareRenderSurface(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
   auto surface = SkSurface::MakeRaster(
@@ -317,12 +317,12 @@ bool EmbedderTestCompositor::CreateSoftwareRenderSurface(
   return true;
 }
 
-void EmbedderTestCompositor::SetNextPresentCallback(
+void EmbedderTestCompositorGL::SetNextPresentCallback(
     const PresentCallback& next_present_callback) {
   SetPresentCallback(next_present_callback, true);
 }
 
-void EmbedderTestCompositor::SetPresentCallback(
+void EmbedderTestCompositorGL::SetPresentCallback(
     const PresentCallback& present_callback,
     bool one_shot) {
   FML_CHECK(!present_callback_);
@@ -330,41 +330,41 @@ void EmbedderTestCompositor::SetPresentCallback(
   present_callback_is_one_shot_ = one_shot;
 }
 
-void EmbedderTestCompositor::SetNextSceneCallback(
+void EmbedderTestCompositorGL::SetNextSceneCallback(
     const NextSceneCallback& next_scene_callback) {
   FML_CHECK(!next_scene_callback_);
   next_scene_callback_ = next_scene_callback;
 }
 
-void EmbedderTestCompositor::SetPlatformViewRendererCallback(
+void EmbedderTestCompositorGL::SetPlatformViewRendererCallback(
     const PlatformViewRendererCallback& callback) {
   platform_view_renderer_callback_ = callback;
 }
 
-size_t EmbedderTestCompositor::GetPendingBackingStoresCount() const {
+size_t EmbedderTestCompositorGL::GetPendingBackingStoresCount() const {
   FML_CHECK(backing_stores_created_ >= backing_stores_collected_);
   return backing_stores_created_ - backing_stores_collected_;
 }
 
-size_t EmbedderTestCompositor::GetBackingStoresCreatedCount() const {
+size_t EmbedderTestCompositorGL::GetBackingStoresCreatedCount() const {
   return backing_stores_created_;
 }
 
-size_t EmbedderTestCompositor::GetBackingStoresCollectedCount() const {
+size_t EmbedderTestCompositorGL::GetBackingStoresCollectedCount() const {
   return backing_stores_collected_;
 }
 
-void EmbedderTestCompositor::AddOnCreateRenderTargetCallback(
+void EmbedderTestCompositorGL::AddOnCreateRenderTargetCallback(
     fml::closure callback) {
   on_create_render_target_callbacks_.push_back(callback);
 }
 
-void EmbedderTestCompositor::AddOnCollectRenderTargetCallback(
+void EmbedderTestCompositorGL::AddOnCollectRenderTargetCallback(
     fml::closure callback) {
   on_collect_render_target_callbacks_.push_back(callback);
 }
 
-void EmbedderTestCompositor::AddOnPresentCallback(fml::closure callback) {
+void EmbedderTestCompositorGL::AddOnPresentCallback(fml::closure callback) {
   on_present_callbacks_.push_back(callback);
 }
 

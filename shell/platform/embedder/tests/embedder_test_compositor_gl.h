@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_H_
-#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_H_
+#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_GL_H_
+#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_GL_H_
 
 #include <vector>
 
@@ -15,7 +15,7 @@
 namespace flutter {
 namespace testing {
 
-class EmbedderTestCompositor {
+class EmbedderTestCompositorGL {
  public:
   enum class RenderTargetType {
     kOpenGLFramebuffer,
@@ -23,9 +23,9 @@ class EmbedderTestCompositor {
     kSoftwareBuffer,
   };
 
-  EmbedderTestCompositor(SkISize surface_size, sk_sp<GrDirectContext> context);
+  EmbedderTestCompositorGL(SkISize surface_size, sk_sp<GrDirectContext> context);
 
-  ~EmbedderTestCompositor();
+  ~EmbedderTestCompositorGL();
 
   void SetRenderTargetType(RenderTargetType type);
 
@@ -100,10 +100,10 @@ class EmbedderTestCompositor {
   bool CreateSoftwareRenderSurface(const FlutterBackingStoreConfig* config,
                                    FlutterBackingStore* renderer_out);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestCompositor);
+  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestCompositorGL);
 };
 
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_GL_H_
