@@ -7,4 +7,9 @@ declare_args() {
   shell_enable_metal = false
   shell_enable_vulkan = false
   stripped_symbols = true
+
+  test_enable_gl = false
+  test_enable_metal = false
+  test_enable_vulkan = is_fuchsia
+  test_enable_software = true
 }

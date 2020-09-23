@@ -156,6 +156,7 @@ InferOpenGLPlatformViewCreationCallback(
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
+#if 0
   if (config->type != kOpenGL) {
     return nullptr;
   }
@@ -266,6 +267,9 @@ InferOpenGLPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
+#else
+  return nullptr;
+#endif
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -336,6 +340,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLTexture* texture) {
+#if 0
   GrGLTextureInfo texture_info;
   texture_info.fTarget = texture->target;
   texture_info.fID = texture->name;
@@ -370,12 +375,16 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
 
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLFramebuffer* framebuffer) {
+#if 0
   GrGLFramebufferInfo framebuffer_info = {};
   framebuffer_info.fFormat = framebuffer->target;
   framebuffer_info.fFBOID = framebuffer->name;
@@ -409,6 +418,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
@@ -603,6 +615,11 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       auto aot_data = std::make_unique<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
+#if OS_FUCHSIA
+  // TODO(gw280): https://github.com/flutter/flutter/issues/50285
+  // Dart doesn't implement Dart_LoadELF on Fuchsia
+      Dart_LoadedElf* loaded_elf = nullptr;
+#else
       Dart_LoadedElf* loaded_elf = Dart_LoadELF(
           source->elf_path,               // file path
           0,                              // file offset
@@ -612,6 +629,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
           &aot_data->vm_isolate_data,     // vm isolate data (out)
           &aot_data->vm_isolate_instrs    // vm isolate instr (out)
       );
+#endif
 
       if (loaded_elf == nullptr) {
         return LOG_EMBEDDER_ERROR(kInvalidArguments, error);
@@ -1026,9 +1044,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     if (SAFE_ACCESS(open_gl_config, gl_external_texture_frame_callback,
                     nullptr) != nullptr) {
       external_texture_callback =
-          [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
+          [](
               int64_t texture_identifier, GrDirectContext* context,
               const SkISize& size) -> sk_sp<SkImage> {
+#if 0
         FlutterOpenGLTexture texture = {};
 
         if (!ptr(user_data, texture_identifier, size.width(), size.height(),
@@ -1072,6 +1091,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         }
 
         return image;
+#endif
+        return nullptr;
       };
     }
   }
